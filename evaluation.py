@@ -34,8 +34,10 @@ def evaluate_predictions(
     # Overall accuracy
     accuracy = np.mean(predictions == actuals)
     
-    # Accuracy excluding draws
-    non_draw_mask = actuals != 'Draw'
+    # Accuracy excluding draws (both actual AND predicted)
+    # Only count matches where actual != Draw AND prediction != Draw
+    # This ensures we're only measuring Home vs Away predictions on decisive results
+    non_draw_mask = (actuals != 'Draw') & (predictions != 'Draw')
     if non_draw_mask.sum() > 0:
         accuracy_no_draw = np.mean(predictions[non_draw_mask] == actuals[non_draw_mask])
     else:
@@ -46,6 +48,11 @@ def evaluate_predictions(
     correct = np.sum(predictions == actuals)
     actual_draws = np.sum(actuals == 'Draw')
     predicted_draws = np.sum(predictions == 'Draw')
+    
+    # Count for no-draw accuracy (how many matches had decisive predictions on decisive results)
+    non_draw_mask = (actuals != 'Draw') & (predictions != 'Draw')
+    no_draw_total = non_draw_mask.sum()
+    no_draw_correct = np.sum(predictions[non_draw_mask] == actuals[non_draw_mask]) if no_draw_total > 0 else 0
     
     # Draw prediction accuracy
     draw_pred_mask = predictions == 'Draw'
@@ -65,6 +72,8 @@ def evaluate_predictions(
         'accuracy_no_draw': accuracy_no_draw,
         'correct': correct,
         'total': total,
+        'no_draw_correct': no_draw_correct,
+        'no_draw_total': no_draw_total,
         'actual_draws': actual_draws,
         'predicted_draws': predicted_draws,
         'draw_precision': draw_precision,
@@ -190,9 +199,8 @@ def rolling_window_evaluation(
         
         if verbose:
             print(f"\nResults:")
-            print(f"  Accuracy (overall):         {metrics['accuracy']:.2%}")
-            print(f"  Accuracy (excluding draws): {metrics['accuracy_no_draw']:.2%}")
-            print(f"  Correct predictions:        {metrics['correct']}/{metrics['total']}")
+            print(f"  Accuracy (overall):         {metrics['accuracy']:.2%} ({metrics['correct']}/{metrics['total']})")
+            print(f"  Accuracy (no draws):        {metrics['accuracy_no_draw']:.2%} ({metrics['no_draw_correct']}/{metrics['no_draw_total']})")
             print(f"  Actual draws in test set:   {metrics['actual_draws']}")
             print(f"  Predicted draws:            {metrics['predicted_draws']}")
             if metrics['predicted_draws'] > 0:
@@ -220,6 +228,8 @@ def rolling_window_evaluation(
     avg_accuracy_no_draw = np.mean([m['accuracy_no_draw'] for m in all_metrics])
     total_correct = sum([m['correct'] for m in all_metrics])
     total_predictions = sum([m['total'] for m in all_metrics])
+    total_no_draw_correct = sum([m['no_draw_correct'] for m in all_metrics])
+    total_no_draw_total = sum([m['no_draw_total'] for m in all_metrics])
     total_actual_draws = sum([m['actual_draws'] for m in all_metrics])
     total_predicted_draws = sum([m['predicted_draws'] for m in all_metrics])
     avg_draw_precision = np.mean([m['draw_precision'] for m in all_metrics if m['predicted_draws'] > 0]) if any(m['predicted_draws'] > 0 for m in all_metrics) else 0.0
@@ -230,8 +240,9 @@ def rolling_window_evaluation(
     if verbose:
         print(f"\nNumber of windows evaluated: {len(all_metrics)}")
         print(f"\nAverage Accuracy (overall):        {avg_accuracy:.2%}")
-        print(f"Average Accuracy (excluding draws): {avg_accuracy_no_draw:.2%}")
+        print(f"Average Accuracy (no draws):       {avg_accuracy_no_draw:.2%}")
         print(f"Total correct predictions:         {total_correct}/{total_predictions}")
+        print(f"Total correct (no draws):          {total_no_draw_correct}/{total_no_draw_total}")
         print(f"Total actual draws in test sets:   {total_actual_draws}")
         print(f"Total predicted draws:             {total_predicted_draws}")
         if total_predicted_draws > 0:
@@ -247,6 +258,8 @@ def rolling_window_evaluation(
         'avg_accuracy_no_draw': avg_accuracy_no_draw,
         'total_correct': total_correct,
         'total_predictions': total_predictions,
+        'total_no_draw_correct': total_no_draw_correct,
+        'total_no_draw_total': total_no_draw_total,
         'total_actual_draws': total_actual_draws,
         'total_predicted_draws': total_predicted_draws,
         'avg_draw_precision': avg_draw_precision,

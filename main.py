@@ -24,11 +24,14 @@ def run_model(model, df, model_name):
     print(f"EVALUATION COMPLETE: {model_name}")
     print(f"{'='*80}")
     print(f"\nFinal Average Accuracy: {results['avg_accuracy']:.4f} ({results['avg_accuracy']:.2%})")
-    print(f"Final Average Accuracy (no draws): {results['avg_accuracy_no_draw']:.4f} ({results['avg_accuracy_no_draw']:.2%})")
-    print(f"Total actual draws: {results['total_actual_draws']}")
-    print(f"Total predicted draws: {results['total_predicted_draws']}")
+    print(f"  └─ Total: {results['total_correct']}/{results['total_predictions']}")
+    print(f"\nFinal Average Accuracy (no draws): {results['avg_accuracy_no_draw']:.4f} ({results['avg_accuracy_no_draw']:.2%})")
+    print(f"  └─ Total: {results['total_no_draw_correct']}/{results['total_no_draw_total']}")
+    print(f"\nDraw Statistics:")
+    print(f"  Actual draws in test sets: {results['total_actual_draws']}")
+    print(f"  Predicted draws: {results['total_predicted_draws']}")
     if results['total_predicted_draws'] > 0:
-        print(f"Average draw precision: {results['avg_draw_precision']:.2%}")
+        print(f"  Draw precision: {results['avg_draw_precision']:.2%}")
     
     # Show per-window breakdown
     print(f"\n{'='*80}")
