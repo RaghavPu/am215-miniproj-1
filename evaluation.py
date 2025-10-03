@@ -5,6 +5,15 @@ from models.ranker_model import RankerModel
 from typing import Dict, List, Tuple
 
 
+def get_predicted_outcome(model: RankerModel, home_team: str, away_team: str, draw_threshold: float = 0.05) -> float:
+    home_win_prob = model.get_probability_of_win(home_team, away_team)
+    if home_win_prob > 0.5 + draw_threshold:
+        return 'Home'
+    elif home_win_prob < 0.5 - draw_threshold:
+        return 'Away'
+    else:
+        return 'Draw'
+
 def get_actual_outcome(home_score: int, away_score: int) -> str:
     if home_score > away_score:
         return 'Home'
@@ -22,6 +31,7 @@ def evaluate_predictions(
     predictions = np.array(predictions)
     actuals = np.array(actuals)
     
+    # Overall accuracy
     accuracy = np.mean(predictions == actuals)
     
     # Accuracy excluding draws
@@ -34,7 +44,15 @@ def evaluate_predictions(
     # Count statistics
     total = len(actuals)
     correct = np.sum(predictions == actuals)
-    draws = np.sum(actuals == 'Draw')
+    actual_draws = np.sum(actuals == 'Draw')
+    predicted_draws = np.sum(predictions == 'Draw')
+    
+    # Draw prediction accuracy
+    draw_pred_mask = predictions == 'Draw'
+    if predicted_draws > 0:
+        draw_precision = np.sum((predictions == 'Draw') & (actuals == 'Draw')) / predicted_draws
+    else:
+        draw_precision = 0.0
     
     # Brier score (error between predicted and actual probabilities)
     brier_score = None
@@ -47,7 +65,9 @@ def evaluate_predictions(
         'accuracy_no_draw': accuracy_no_draw,
         'correct': correct,
         'total': total,
-        'draws': draws,
+        'actual_draws': actual_draws,
+        'predicted_draws': predicted_draws,
+        'draw_precision': draw_precision,
         'brier_score': brier_score
     }
 
@@ -66,15 +86,24 @@ def evaluate_on_test_period(
         # Get win probability for home team
         home_win_prob = model.get_probability_of_win(row['home_team'], row['away_team'])
         
-        # Make prediction based on probability (>0.5 means home team favored)
-        prediction = 'Home' if home_win_prob > 0.5 else 'Away'
+        # Make prediction (can be Home, Away, or Draw)
+        prediction = get_predicted_outcome(model, row['home_team'], row['away_team'],
+)
         
         # Get actual outcome
         actual = get_actual_outcome(row['home_team_score'], row['away_team_score'])
         
         predictions.append(prediction)
         actuals.append(actual)
-        probabilities.append(home_win_prob if prediction == 'Home' else (1 - home_win_prob))
+        
+        # Store probability of predicted outcome
+        if prediction == 'Home':
+            probabilities.append(home_win_prob)
+        elif prediction == 'Away':
+            probabilities.append(1 - home_win_prob)
+        else:  # Draw
+            # For draw predictions, use distance from 0.5 as confidence
+            probabilities.append(1.0 - abs(home_win_prob - 0.5) / 0.5)
         
         # Store detailed results
         results_list.append({
@@ -161,12 +190,15 @@ def rolling_window_evaluation(
         
         if verbose:
             print(f"\nResults:")
-            print(f"  Accuracy (overall):        {metrics['accuracy']:.2%}")
+            print(f"  Accuracy (overall):         {metrics['accuracy']:.2%}")
             print(f"  Accuracy (excluding draws): {metrics['accuracy_no_draw']:.2%}")
-            print(f"  Correct predictions:       {metrics['correct']}/{metrics['total']}")
-            print(f"  Draws in test set:         {metrics['draws']}")
+            print(f"  Correct predictions:        {metrics['correct']}/{metrics['total']}")
+            print(f"  Actual draws in test set:   {metrics['actual_draws']}")
+            print(f"  Predicted draws:            {metrics['predicted_draws']}")
+            if metrics['predicted_draws'] > 0:
+                print(f"  Draw precision:             {metrics['draw_precision']:.2%}")
             if metrics['brier_score'] is not None:
-                print(f"  Brier Score:               {metrics['brier_score']:.4f}")
+                print(f"  Brier Score:                {metrics['brier_score']:.4f}")
         
         all_metrics.append(metrics)
         
@@ -188,7 +220,9 @@ def rolling_window_evaluation(
     avg_accuracy_no_draw = np.mean([m['accuracy_no_draw'] for m in all_metrics])
     total_correct = sum([m['correct'] for m in all_metrics])
     total_predictions = sum([m['total'] for m in all_metrics])
-    total_draws = sum([m['draws'] for m in all_metrics])
+    total_actual_draws = sum([m['actual_draws'] for m in all_metrics])
+    total_predicted_draws = sum([m['predicted_draws'] for m in all_metrics])
+    avg_draw_precision = np.mean([m['draw_precision'] for m in all_metrics if m['predicted_draws'] > 0]) if any(m['predicted_draws'] > 0 for m in all_metrics) else 0.0
     
     brier_scores = [m['brier_score'] for m in all_metrics if m['brier_score'] is not None]
     avg_brier = np.mean(brier_scores) if brier_scores else None
@@ -198,7 +232,10 @@ def rolling_window_evaluation(
         print(f"\nAverage Accuracy (overall):        {avg_accuracy:.2%}")
         print(f"Average Accuracy (excluding draws): {avg_accuracy_no_draw:.2%}")
         print(f"Total correct predictions:         {total_correct}/{total_predictions}")
-        print(f"Total draws in all test sets:      {total_draws}")
+        print(f"Total actual draws in test sets:   {total_actual_draws}")
+        print(f"Total predicted draws:             {total_predicted_draws}")
+        if total_predicted_draws > 0:
+            print(f"Average draw precision:            {avg_draw_precision:.2%}")
         if avg_brier is not None:
             print(f"Average Brier Score:               {avg_brier:.4f}")
     
@@ -210,7 +247,9 @@ def rolling_window_evaluation(
         'avg_accuracy_no_draw': avg_accuracy_no_draw,
         'total_correct': total_correct,
         'total_predictions': total_predictions,
-        'total_draws': total_draws,
+        'total_actual_draws': total_actual_draws,
+        'total_predicted_draws': total_predicted_draws,
+        'avg_draw_precision': avg_draw_precision,
         'avg_brier_score': avg_brier,
         'window_metrics': all_metrics,
         'detailed_results': all_detailed_df,

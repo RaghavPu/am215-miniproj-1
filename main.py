@@ -22,6 +22,10 @@ def run_model(model, df, model_name):
     print(f"{'='*80}")
     print(f"\nFinal Average Accuracy: {results['avg_accuracy']:.4f} ({results['avg_accuracy']:.2%})")
     print(f"Final Average Accuracy (no draws): {results['avg_accuracy_no_draw']:.4f} ({results['avg_accuracy_no_draw']:.2%})")
+    print(f"Total actual draws: {results['total_actual_draws']}")
+    print(f"Total predicted draws: {results['total_predicted_draws']}")
+    if results['total_predicted_draws'] > 0:
+        print(f"Average draw precision: {results['avg_draw_precision']:.2%}")
     
     # Show per-window breakdown
     print(f"\n{'='*80}")
@@ -36,6 +40,8 @@ def run_model(model, df, model_name):
               f"{m['correct']}/{m['total']:<10}")
     
     print("\n" + "="*80)
+    
+    return results
 
 if __name__ == "__main__":
 
