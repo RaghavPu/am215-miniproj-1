@@ -5,7 +5,7 @@ from models.ranker_model import RankerModel
 from typing import Dict, List, Tuple
 
 
-def get_predicted_outcome(model: RankerModel, home_team: str, away_team: str, draw_threshold: float = 0.05) -> float:
+def get_predicted_outcome(model: RankerModel, home_team: str, away_team: str, draw_threshold: float = 0.01) -> float:
     home_win_prob = model.get_probability_of_win(home_team, away_team)
     if home_win_prob > 0.5 + draw_threshold:
         return 'Home'
