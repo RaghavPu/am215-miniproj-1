@@ -8,9 +8,9 @@ strength of football teams based on their match history.
 import pandas as pd
 import numpy as np
 from typing import Dict, Tuple, Optional
+from .ranker_model import RankerModel
 
-
-class EloRatingSystem:
+class EloRatingSystem(RankerModel):
     
     def __init__(self, k_factor: float = 32, initial_rating: float = 1500):
         self.k_factor = k_factor
@@ -177,7 +177,14 @@ class EloRatingSystem:
             'team_b_win_probability': prob_b_wins,
             'rating_difference': rating_a - rating_b
         }
-
+    
+    def get_probability_of_win(self, team_a: str, team_b: str) -> float:
+        return self.predict_match(team_a, team_b)['team_a_win_probability']
+    
+    def reset(self):
+        """Reset the Elo system to initial state"""
+        self.ratings = {}
+        self.rating_history = {}
 
 if __name__ == "__main__":
     # Example usage
