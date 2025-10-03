@@ -1,7 +1,7 @@
 import pandas as pd
-import numpy as np
 from models.elo import EloRatingSystem
 from models.baseline_uniform import UniformBaseline
+from models.baseline_random import RandomBaseline
 from dataloader import load_international_matches
 from evaluation import rolling_window_evaluation
 
@@ -44,5 +44,6 @@ if __name__ == "__main__":
     df = load_international_matches()
 
     run_model(UniformBaseline(), df, "Uniform Baseline")
+    run_model(RandomBaseline(seed=42), df, "Random Baseline")
     run_model(EloRatingSystem(k_factor=32, initial_rating=1500), df, "Elo Rating System")
     
