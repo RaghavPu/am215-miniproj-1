@@ -1,5 +1,6 @@
 import pandas as pd
 from models.elo import EloRatingSystem
+from models.elo_weighted import EloWeighted
 from models.baseline_uniform import UniformBaseline
 from models.baseline_random import RandomBaseline
 from dataloader import load_international_matches
@@ -52,4 +53,5 @@ if __name__ == "__main__":
     run_model(UniformBaseline(), df, "Uniform Baseline")
     run_model(RandomBaseline(seed=42), df, "Random Baseline")
     run_model(EloRatingSystem(k_factor=32, initial_rating=1500), df, "Elo Rating System")
+    run_model(EloWeighted(k_factor=32, initial_rating=1500, goal_diff_importance=1.0), df, "Elo Weighted (goal diff)")
     
