@@ -1,6 +1,8 @@
 import pandas as pd
 from models.elo import EloRatingSystem
 from models.elo_weighted import EloWeighted
+from models.elo_time_weighted import EloTimeWeighted
+from models.elo_combined import EloCombined
 from models.baseline_uniform import UniformBaseline
 from models.baseline_random import RandomBaseline
 from dataloader import load_international_matches
@@ -50,8 +52,19 @@ if __name__ == "__main__":
     print("\nLoading match data...")
     df = load_international_matches()
 
+    # Baselines
     run_model(UniformBaseline(), df, "Uniform Baseline")
     run_model(RandomBaseline(seed=42), df, "Random Baseline")
-    run_model(EloRatingSystem(k_factor=32, initial_rating=1500), df, "Elo Rating System")
-    run_model(EloWeighted(k_factor=32, initial_rating=1500, goal_diff_importance=1.0), df, "Elo Weighted (goal diff)")
+    
+    # Standard Elo
+    run_model(EloRatingSystem(k_factor=32, initial_rating=1500), df, "Elo (standard)")
+    
+    # Elo with goal differential weighting
+    run_model(EloWeighted(k_factor=32, initial_rating=1500, goal_diff_importance=1.0), df, "Elo (goal diff weighted)")
+    
+    # Elo with time weighting (recent matches matter more)
+    run_model(EloTimeWeighted(k_factor=32, initial_rating=1500, time_decay_rate=0.5), df, "Elo (time weighted)")
+    
+    # Elo with both goal diff and time weighting
+    run_model(EloCombined(k_factor=32, initial_rating=1500, goal_diff_importance=1.0, time_decay_rate=0.5), df, "Elo (combined: goal+time)")
     
