@@ -1,16 +1,12 @@
 import pandas as pd
 import numpy as np
 from models.elo import EloRatingSystem
+from models.baseline_uniform import UniformBaseline
 from dataloader import load_international_matches
 from evaluation import rolling_window_evaluation
 
-
-if __name__ == "__main__":
-    # Load data
-    print("\nLoading match data...")
-    df = load_international_matches()
-
-    model = EloRatingSystem(k_factor=32, initial_rating=1500)
+def run_model(model, df, model_name):
+    
 
     results = rolling_window_evaluation(
         df,
@@ -22,7 +18,7 @@ if __name__ == "__main__":
     
     # Print summary
     print(f"\n{'='*80}")
-    print("EVALUATION COMPLETE")
+    print(f"EVALUATION COMPLETE: {model_name}")
     print(f"{'='*80}")
     print(f"\nFinal Average Accuracy: {results['avg_accuracy']:.4f} ({results['avg_accuracy']:.2%})")
     print(f"Final Average Accuracy (no draws): {results['avg_accuracy_no_draw']:.4f} ({results['avg_accuracy_no_draw']:.2%})")
@@ -40,3 +36,13 @@ if __name__ == "__main__":
               f"{m['correct']}/{m['total']:<10}")
     
     print("\n" + "="*80)
+
+if __name__ == "__main__":
+
+    # Load data
+    print("\nLoading match data...")
+    df = load_international_matches()
+
+    run_model(UniformBaseline(), df, "Uniform Baseline")
+    run_model(EloRatingSystem(k_factor=32, initial_rating=1500), df, "Elo Rating System")
+    
