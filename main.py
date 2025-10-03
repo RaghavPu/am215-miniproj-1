@@ -16,7 +16,8 @@ if __name__ == "__main__":
         df,
         train_years=4,
         test_years=1,
-        model=model
+        model=model,
+        verbose=False
     )
     
     # Print summary

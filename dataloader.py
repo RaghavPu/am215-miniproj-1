@@ -3,7 +3,7 @@ import numpy as np
 from pathlib import Path
 
 
-def load_international_matches(csv_path='data/international_matches.csv'):
+def load_international_matches(csv_path='data/international_matches.csv', verbose=False):
     """
     Load international football matches data from CSV file.
     
@@ -34,11 +34,12 @@ def load_international_matches(csv_path='data/international_matches.csv'):
     df['date'] = pd.to_datetime(df['date'])
     
     # Display basic info
-    print(f"Loaded {len(df)} matches")
-    print(f"Date range: {df['date'].min()} to {df['date'].max()}")
-    print(f"\nColumns: {list(df.columns)}")
-    print(f"\nShape: {df.shape}")
-    print(f"\nMissing values:\n{df.isnull().sum()}")
+    if verbose:
+        print(f"Loaded {len(df)} matches")
+        print(f"Date range: {df['date'].min()} to {df['date'].max()}")
+        print(f"\nColumns: {list(df.columns)}")
+        print(f"\nShape: {df.shape}")
+        print(f"\nMissing values:\n{df.isnull().sum()}")
     
     return df
 
